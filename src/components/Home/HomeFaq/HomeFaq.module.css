@@ -1,0 +1,21 @@
+
+.root{
+    position: relative;
+    
+}
+.root table{
+    margin-top: 30px;
+}
+.root table td{
+    border: 1px solid #dddddd;
+    border-color: var(--primary);
+    text-align: center;
+    padding: 8px 20px;
+}
+
+@media (min-width : 1200px) {
+    .root table td{
+        min-width: 240px;
+        padding: 16px 20px;
+    }
+}

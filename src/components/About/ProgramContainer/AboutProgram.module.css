@@ -1,0 +1,22 @@
+.root * ~ *{
+    margin-top: 20px;
+}
+.root h3{
+    font-size: 28px;
+    font-family: "Fanwood Text", serif;
+    line-height: 1.2;
+}
+.root p{
+    line-height: 1.5;
+}
+@media (min-width : 992px) {
+    .root * ~ *{
+        margin-top: 32px;
+    }
+    .root h3{
+        font-size: 32px;
+    }
+    .root{
+        font-size: 18px;
+    }
+}

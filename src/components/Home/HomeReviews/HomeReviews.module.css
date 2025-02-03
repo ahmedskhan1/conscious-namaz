@@ -1,0 +1,11 @@
+.swiper .slide{
+    transform: scale(0.4);
+    opacity: 30%;
+}
+.swiper .slide.slide_near{
+    transform: scale(0.66);
+}
+.swiper .slide.slide_active{
+    transform: scale(1);
+    opacity: 1;
+}

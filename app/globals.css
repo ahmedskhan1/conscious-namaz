@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Fanwood+Text:ital@0;1&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #334839;
+  --primary-hover: #273526;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  --header-height: 66px;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+}
+
+.ff-2 {
+  font-family: "Fanwood Text", serif;
+}
+
+.h1 {
+  font-size: 32px;
+  font-family: "Fanwood Text", serif;
+}
+
+.h2 {
+  font-size: 32px;
+  font-family: "Fanwood Text", serif;
+}
+
+.admin-content-area {
+  *+* {
+    margin-top: 20px;
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  h3+p {
+    margin-top: 10px;
+  }
+
+  ol {
+    list-style: decimal;
+    padding-left: 16px;
+  }
+}
+
+
+@media (min-width :768px) {
+  .h1 {
+    font-size: 45px;
+  }
+
+  .h2 {
+    font-size: 38px;
+  }
+}
+
+@media (min-width : 992px) {
+  body {
+    --header-height: 72px;
+  }
+
+  .admin-content-area {
+    font-size: 18px;
+  }
+
+  .admin-content-area *+* {
+    margin-top: 32px;
+  }
+
+  .admin-content-area h3 {
+    font-size: 24px;
+  }
+
+  .admin-content-area ol {
+    padding-left: 26px;
+  }
+}
+
+@media (min-width : 1280px) {
+  body {
+    --header-height: 100px;
+  }
+
+  .h1 {
+    font-size: 60px;
+  }
+
+  .h2 {
+    font-size: 45px;
+  }
+}
+
+@media (min-width : 1600px) {
+  .h1 {
+    font-size: 72px;
+  }
+
+  .h2 {
+    font-size: 52px;
+  }
+}
+
+@keyframes fadeInSmooth {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeInSmooth 4s ease-in-out;
+  animation-fill-mode: forwards;
+}
