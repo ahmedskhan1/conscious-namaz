@@ -3,6 +3,8 @@ import Header from "./Header";
 import Footer from "./Footer";
 
 const CommonLayout = ({ children }) => {
+  console.log("hii");
+
   return (
     <>
       <Header />
