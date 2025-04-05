@@ -92,7 +92,7 @@ const HomeBanner = () => {
                 <Button
                   className={"xl:min-w-[340px]"}
                   varient="light"
-                  onClick={() => createOrder(99)}
+                  onClick={() => createOrder(1999)}
                 >
                   register now
                 </Button>
