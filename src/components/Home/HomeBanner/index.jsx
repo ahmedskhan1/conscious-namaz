@@ -85,7 +85,7 @@ const HomeBanner = () => {
                   JOIN US FOR THREE NIGHTS OF TAHAJJUD NAMAZ AND WITNESS
                   YOURSELF THE POWER OF CONSCIOUS PRAYING{" "}
                   <span className="font-medium">
-                    (Early bird offer 99RS -{" "}
+                    (Early bird offer 1999RS -{" "}
                     <span className="line-through">2999Rs</span>)
                   </span>
                 </p>
