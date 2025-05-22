@@ -8,10 +8,48 @@ import { Navigation } from "swiper";
 import Animate from "../../Animate";
 
 const HomeReviews = () => {
-
     const [activeIndex, setactiveIndex] = useState(0);
     const swiperRef = useRef(null);
     const thumbSlideRef = useRef(null);
+    const [reviews, setReviews] = useState(fallbackData);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch reviews from the database
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const response = await fetch('/api/reviews');
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    // Transform the data to match the required format
+                    const transformedData = data.data.map((item, index) => {
+                        // Use review content without appending name
+                        let content = item.review || '';
+                        
+                        return {
+                            // Use the item's image if available, otherwise fallback
+                            img: item.img || `/images/reviews/img-${(index % 5) + 1}.webp`,
+                            star: item.rating || 5,
+                            name: item.name || '', // Keep name separate
+                            title: item.title || '',
+                            description: '', // Remove description as it's likely duplicating content
+                            content: content,
+                            url: item.url || ''
+                        };
+                    });
+                    setReviews(transformedData);
+                }
+            } catch (error) {
+                console.error('Error fetching reviews:', error);
+                // Keep using fallback data in case of error
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchReviews();
+    }, []);
 
     const handleSlideChange = (index) => {
         setactiveIndex(index);
@@ -23,8 +61,16 @@ const HomeReviews = () => {
     useEffect(() => {
         thumbSlideRef.current?.swiper?.slideTo(activeIndex);
 
-    }, [activeIndex, thumbSlideRef])
+    }, [activeIndex, thumbSlideRef]);
 
+    // Show loading state or fallback if no reviews
+    if (loading) {
+        return (
+            <section className="p-5 lg:pt-[100px] lg:pb-14 text-center">
+                <h2 className="h2 mb-10">Loading Reviews...</h2>
+            </section>
+        );
+    }
 
     return (
         <section className="p-5 lg:pt-[100px] lg:pb-14">
@@ -74,7 +120,7 @@ const HomeReviews = () => {
                         }}
                     >
                         {
-                            data?.map((item, index) => (
+                            reviews?.map((item, index) => (
                                 <SwiperSlide
                                     onClick={() => handleSlideChange(index)}
                                     key={index} className={`flex items-center justify-center ${Sytle.slide}`}>
@@ -99,7 +145,7 @@ const HomeReviews = () => {
                     onSlideChange={(e) => swiperRef?.current?.swiper?.slideTo(e?.activeIndex)}
                 >
                     {
-                        data?.map((item, i) => (
+                        reviews?.map((item, i) => (
                             <SwiperSlide key={i} className={`flex items-center justify-center ${Sytle.slide}`}>
                                 <div className="text-center">
                                     <div className="flex items-center justify-center mb-6 gap-1">
@@ -113,10 +159,20 @@ const HomeReviews = () => {
                                             />
                                         ))}
                                     </div>
-                                    <p className="text-primary lg:text-black text-xl leading-6 mb-6">
+                                    <p className="text-primary lg:text-black text-xl leading-6 mb-2">
                                         {item.content}
                                     </p>
-                                    <p className="text-primary lg:text-black text-xl leading-6 italic">{item.name}</p>
+                                    {item.name && <p className="text-primary lg:text-black text-xl font-medium mb-6">{item.name}</p>}
+                                    {item.url && (
+                                        <a 
+                                            href={item.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline text-sm mt-3 inline-block"
+                                        >
+                                            View Source
+                                        </a>
+                                    )}
                                 </div>
                             </SwiperSlide>
                         ))
@@ -150,36 +206,36 @@ const HomeReviews = () => {
 
 export default HomeReviews
 
-
-const data = [
+// Fallback data in case database data is not available
+const fallbackData = [
     {
         img: "/images/reviews/img-1.webp",
         star: 5,
         name: "- Zahid pathan - Businessman",
-        content: "Firstly, I was thrilled by the knowledge I got to learn from the course, secondly it made me realise the right way to pray and ask Allah for my wishes and dwas. It's impossible to believe the success i achieved in my life after the program."
+        content: "Firstly, I was thrilled by the knowledge I got to learn from the course, secondly it made me realise the right way to pray and ask Allah for my wishes and dwas. It's impossible to believe the success i achieved in my life after the program."
     },
     {
         img: "/images/reviews/img-2.webp",
         star: 5,
         name: "- Nusrath khan- Engineer",
-        content: "I took this course, just because I am Muslim and thought I will gain some sawaab by attending it. But I was wrong. This course made me see Islam in a way no one could ever help me see."
+        content: "I took this course, just because I am Muslim and thought I will gain some sawaab by attending it. But I was wrong. This course made me see Islam in a way no one could ever help me see."
     },
     {
         img: "/images/reviews/img-3.webp",
         star: 5,
         name: "- Safiuddin- Student",
-        content: "Assalamualaikum everyone. Being Hafez e Qur'an my self, i was still unaware of the real beauty of namaz and Islam. I am forever grateful for this program. Alhamdulillah!"
+        content: "Assalamualaikum everyone. Being Hafez e Qur'an my self, i was still unaware of the real beauty of namaz and Islam. I am forever grateful for this program. Alhamdulillah!"
     },
     {
         img: "/images/reviews/img-4.webp",
         star: 5,
         name: "- Zaid Nasrullah- Architect",
-        content: "A colleague suggested me to attend one session of the tahajjud program because I was praying restlessly to Allah to make one very important thing in my life to fall in place for months. The approach the tahajjud namaz program had towards dua and manifestations blew my mind. In just three days of praying and offering dwa in the conscious way flipped everything in my life like big blessing."
+        content: "A colleague suggested me to attend one session of the tahajjud program because I was praying restlessly to Allah to make one very important thing in my life to fall in place for months. The approach the tahajjud namaz program had towards dua and manifestations blew my mind. In just three days of praying and offering dwa in the conscious way flipped everything in my life like big blessing."
     },
     {
         img: "/images/reviews/img-5.webp",
         star: 5,
         name: "- Sumayya k - House wife",
-        content: "Just by praying namaz the right way, made a world of difference in my life. It made me understand the real purpose of tahajjud  namaz and how it makes all dwa's that I ask Allah at night come to me in real life."
+        content: "Just by praying namaz the right way, made a world of difference in my life. It made me understand the real purpose of tahajjud  namaz and how it makes all dwa's that I ask Allah at night come to me in real life."
     },
 ]

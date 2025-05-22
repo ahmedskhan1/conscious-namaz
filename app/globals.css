@@ -53,6 +53,29 @@ body {
     list-style: decimal;
     padding-left: 16px;
   }
+  
+  ul {
+    list-style: disc;
+    padding-left: 16px;
+  }
+  
+  li {
+    margin-bottom: 8px;
+  }
+  
+  /* Ensure proper display of paragraphs and whitespace */
+  p {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-bottom: 16px;
+  }
+  
+  /* Preserve line breaks */
+  br {
+    display: block;
+    content: "";
+    margin-top: 0.5em;
+  }
 }
 
 

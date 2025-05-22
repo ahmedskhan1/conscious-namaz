@@ -83,7 +83,7 @@ const AboutPage = () => {
       </Container>
 
       <Suspense fallback={<div>Loading Programs...</div>}>
-        <AboutProgram />
+        {/* <AboutProgram /> */}
       </Suspense>
       <AboutConscios />
       <div className="text-white px-5 bg-primary lg:bg-white">

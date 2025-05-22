@@ -111,8 +111,12 @@ const HEADER_DATA = {
       label: "About",
     },
     {
+      url: "/programs",
+      label: "Programs",
+    },
+    {
       url: "/insights",
-      label: "Insights",
+      label: "Blog",
     },
     {
       url: "/#faq",
