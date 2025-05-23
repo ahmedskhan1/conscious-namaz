@@ -11,11 +11,6 @@ const HomeVideos = () => {
     const [isClient, setIsClient] = useState(false);
     const swiperRef = useRef(null);
     const [videos, setVideos] = useState([]);
-
-
-
-
-    
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -152,17 +147,10 @@ const data = [
     },
     {
         title: "The Power of Tahajjud Prayer",
-        description: "We have all at some point witnessed the miracle 
-        
-        
-        
-        
-        
-        
-        this powerful moonlight prayer has to offer, but sadly we barely felt the need to offer this namaz for what it can offer.",
+        description: "We have all at some point witnessed the miracle this powerful moonlight prayer has to offer, but sadly we barely felt the need to offer this namaz for what it can offer.",
         img: "/images/videos/thumbanil4.png",
         url: "https://www.youtube.com/watch?v=rTDtP4zEtCY"
     },
 
 ]
-*/ 
+*/

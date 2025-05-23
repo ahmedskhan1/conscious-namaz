@@ -10,6 +10,40 @@ import createOrder from "@/src/utils/payment";
 const HomeBanner = () => {
   // Retrieve the banner state from localStorage, default to true if not present
   const [isBannerVisible, setIsBannerVisible] = useState(true);
+  const [bannerSettings, setBannerSettings] = useState({
+    description: "JOIN US FOR THREE NIGHTS OF TAHAJJUD NAMAZ AND WITNESS YOURSELF THE POWER OF CONSCIOUS PRAYING",
+    price: 1999,
+    originalPrice: 2999
+  });
+
+  // Fetch banner settings from the API
+  useEffect(() => {
+    const fetchBannerSettings = async () => {
+      try {
+        const response = await fetch("/api/banner-settings");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Banner API response:", data); // Debug log
+        
+        if (data.success && data.bannerSettings) {
+          // Extract only the needed fields from the MongoDB document
+          const { description, price, originalPrice } = data.bannerSettings;
+          setBannerSettings({
+            description: description || bannerSettings.description,
+            price: price || bannerSettings.price,
+            originalPrice: originalPrice || bannerSettings.originalPrice
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching banner settings:", error);
+      }
+    };
+
+    fetchBannerSettings();
+  }, []);
 
   // Function to handle closing the banner and storing the state in localStorage
   const handleCloseBanner = () => {
@@ -47,18 +81,17 @@ const HomeBanner = () => {
           <div className="bg-primary text-white py-5 px-5">
             <div className="max-w-[1306px] mx-auto w-full relative">
               <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 lg:justify-between">
-                <p className="lg:text-lg max-w-[780px] leading-[1.5]">
-                  JOIN US FOR THREE NIGHTS OF TAHAJJUD NAMAZ AND WITNESS
-                  YOURSELF THE POWER OF CONSCIOUS PRAYING{" "}
+                <p className="lg:text-lg max-w-[780px] leading-[1.5] uppercase">
+                  {bannerSettings.description}{" "}
                   <span className="font-medium">
-                    (Early bird offer 1999RS -{" "}
-                    <span className="line-through">2999Rs</span>)
+                    (Offered Price {bannerSettings.price}RS -{" "}
+                    <span className="line-through">{bannerSettings.originalPrice}RS</span>)
                   </span>
                 </p>
                 <Button
                   className={"xl:min-w-[340px]"}
                   varient="light"
-                  onClick={() => createOrder(1999)}
+                  onClick={() => createOrder(bannerSettings.price)}
                 >
                   register now
                 </Button>

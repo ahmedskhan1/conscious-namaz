@@ -18,12 +18,18 @@ export default function Dashboard() {
   const [videos, setVideos] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [bannerSettings, setBannerSettings] = useState({
+    description: '',
+    price: 0,
+    originalPrice: 0
+  });
   
   // Add loading states for each tab
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(true);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [loadingBlogs, setLoadingBlogs] = useState(true);
+  const [loadingBannerSettings, setLoadingBannerSettings] = useState(true);
   
   const [reviewForm, setReviewForm] = useState({
     name: '',
@@ -103,6 +109,7 @@ export default function Dashboard() {
     fetchHomeVideos();
     fetchReviews();
     fetchBlogs();
+    fetchBannerSettings();
   }, [router]);
   
   // Function to check Cloudinary configuration
@@ -229,6 +236,40 @@ export default function Dashboard() {
       alert('Failed to load blogs. Please try again.');
     } finally {
       setLoadingBlogs(false);
+    }
+  };
+  
+  // Fetch banner settings from API
+  const fetchBannerSettings = async () => {
+    try {
+      setLoadingBannerSettings(true);
+      const response = await fetch('/api/banner-settings');
+      
+      // Check if response is OK before trying to parse JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error response from API (status ${response.status}):`, errorText);
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Banner settings API response:", data);
+      
+      if (data.success && data.bannerSettings) {
+        // Extract only the needed fields
+        const { description, price, originalPrice } = data.bannerSettings;
+        setBannerSettings({
+          description: description || "",
+          price: price || 0,
+          originalPrice: originalPrice || 0
+        });
+      } else {
+        console.error("API returned success:false or no bannerSettings:", data);
+      }
+    } catch (error) {
+      console.error('Error fetching banner settings:', error);
+    } finally {
+      setLoadingBannerSettings(false);
     }
   };
   
@@ -899,6 +940,72 @@ export default function Dashboard() {
     }
   };
 
+  // Handle banner settings form change
+  const handleBannerSettingsChange = (e) => {
+    const { name, value } = e.target;
+    setBannerSettings(prev => ({
+      ...prev,
+      [name]: name === 'price' || name === 'originalPrice' ? Number(value) : value
+    }));
+  };
+
+  // Handle banner settings update
+  const handleUpdateBannerSettings = async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Extract only the necessary fields to avoid sending the entire MongoDB document
+      const { description, price, originalPrice } = bannerSettings;
+      const dataToSend = {
+        description, 
+        price: Number(price), 
+        originalPrice: Number(originalPrice)
+      };
+      
+      console.log("Sending banner data:", dataToSend);
+      
+      // Use POST with _method=put instead of PUT for better Vercel compatibility
+      const response = await fetch('/api/banner-settings?_method=put', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend),
+      });
+      
+      // Check if response is OK before trying to parse JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response from API:", errorText);
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Banner updated successfully!');
+        // Extract only the needed fields from the response
+        const updatedSettings = data.bannerSettings;
+        setBannerSettings({
+          description: updatedSettings.description,
+          price: updatedSettings.price,
+          originalPrice: updatedSettings.originalPrice,
+          // Preserve other fields that might be necessary for the UI
+          ...Object.fromEntries(
+            Object.entries(bannerSettings).filter(([key]) => 
+              !['description', 'price', 'originalPrice'].includes(key)
+            )
+          )
+        });
+      } else {
+        alert('Failed to update banner: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating banner:', error);
+      alert('Error updating banner: ' + error.message);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -949,6 +1056,12 @@ export default function Dashboard() {
             onClick={() => setActiveTab('blogs')}
           >
             Blogs
+          </button>
+          <button 
+            className={`px-4 py-2 font-medium ${activeTab === 'bannerSettings' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
+            onClick={() => setActiveTab('bannerSettings')}
+          >
+            Offer Banner
           </button>
         </div>
         
@@ -1252,6 +1365,94 @@ export default function Dashboard() {
                     </div>
                   ))
                 )}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Banner Settings Section */}
+        {activeTab === 'bannerSettings' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Offer Banner</h2>
+            </div>
+            
+            {loadingBannerSettings ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <form onSubmit={handleUpdateBannerSettings}>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+                      Banner Description
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={bannerSettings.description}
+                      onChange={handleBannerSettingsChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      rows="4"
+                      autoCapitalize="on"
+                      maxLength={150}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="price">
+                     Discounted Price (Rs)
+                    </label>
+                    <input
+                      id="price"
+                      name="price"
+                      type="number"
+                      value={bannerSettings.price}
+                      onChange={handleBannerSettingsChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="originalPrice">
+                      Original Price (Rs)
+                    </label>
+                    <input
+                      id="originalPrice"
+                      name="originalPrice"
+                      type="number"
+                      value={bannerSettings.originalPrice}
+                      onChange={handleBannerSettingsChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="submit"
+                      className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Update 
+                    </button>
+                  </div>
+                </form>
+                
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Preview</h3>
+                  <div className="bg-primary text-white p-4 rounded">
+                    <p className="text-lg leading-[1.5]">
+                      {bannerSettings.description}{" "}
+                      <span className="font-medium">
+                        (Offered Price {bannerSettings.price}RS -{" "}
+                        <span className="line-through">{bannerSettings.originalPrice}RS</span>)
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
