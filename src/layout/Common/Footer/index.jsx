@@ -35,6 +35,8 @@ const contactInfo = [
 ];
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear();
+  
   return (
     <footer className="footer bg-white pt-12 pb-6 px-4 md:px-0">
       {/* Main Content Row: 3 columns on desktop, stacked on mobile */}
@@ -78,8 +80,8 @@ const Footer = () => {
       </div>
       {/* Bottom Bar */}
       <div className="footer-bottom mt-10 text-center text-xs text-gray-400">
-        {/* <p>@ Manifest Your Feelings {currentYear}. All Rights Reserved.</p> */}
-        {/* <p>@ Copyright  {currentYear} Manifest Your Feeling | Designed by <Link className="skin" to="http://digitalcreatorz.com/">Digital Creatorz</Link>. All rights reserved.</p> */}
+       { /*<p> Conscious Namaz {currentYear}. All Rights Reserved.</p>*/}
+        <p>@ Copyright  {currentYear} Conscious Namaz | Designed by <Link className="skin" href="http://digitalcreatorz.com/">Digital Creatorz</Link>. All rights reserved.</p>
       </div>
     </footer>
   );
