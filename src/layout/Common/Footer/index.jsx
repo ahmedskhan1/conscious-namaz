@@ -79,9 +79,9 @@ const Footer = () => {
         </div>
       </div>
       {/* Bottom Bar */}
-      <div className="footer-bottom mt-10 text-center text-xs text-gray-400">
+      <div className="footer-bottom mt-10 text-center text-sm text-black">
        { /*<p> Conscious Namaz {currentYear}. All Rights Reserved.</p>*/}
-        <p>@ Copyright  {currentYear} Conscious Namaz | Designed by <Link className="skin" href="http://digitalcreatorz.com/">Digital Creatorz</Link>. All rights reserved.</p>
+        <p>@ Copyright  {currentYear} Conscious Namaz | Designed by <Link className="skin hover:text-green-800" href="http://digitalcreatorz.com/">Digital Creatorz</Link>. All rights reserved.</p>
       </div>
     </footer>
   );
