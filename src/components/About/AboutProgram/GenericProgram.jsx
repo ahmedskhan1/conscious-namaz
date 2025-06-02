@@ -6,9 +6,12 @@ import ProgramContainer from "../ProgramContainer";
 import Animate from "../../Animate";
 import createOrder from "@/src/utils/payment";
 import { useState } from "react";
+import { useCart } from "@/src/context/CartContext";
+import { stripHtmlTags } from "@/src/utils/textFormatting";
 
 const GenericProgram = ({ subscription, useOriginalComponent }) => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const { addToCart } = useCart();
   
   // Check if subscription data is sufficient
   const hasRequiredData = subscription && 
@@ -22,14 +25,25 @@ const GenericProgram = ({ subscription, useOriginalComponent }) => {
     return <OriginalComponent />;
   }
   
-  // Otherwise, continue with the generic display
-  const handleBuyNow = async (feeAmount) => {
-    if (isProcessingPayment || !feeAmount) return;
+  // Handle Buy Now button click to add item to cart
+  const handleBuyNow = async () => {
+    if (isProcessingPayment || !subscription.fee) return;
     
     try {
       setIsProcessingPayment(true);
-      await new Promise(resolve => setTimeout(resolve, 10));
-      await createOrder(feeAmount);
+      
+      // Create cart item from program data
+      const cartItem = {
+        id: subscription._id || `program-${Date.now()}`,
+        name: subscription.name,
+        description: stripHtmlTags(subscription.description, 150),
+        price: subscription.fee,
+        image: subscription.image || `/images/home-sub-img-${Math.floor(Math.random() * 4) + 1}.webp`,
+        quantity: 1
+      };
+      
+      // Add to cart using the payment utility
+      await createOrder(subscription.fee, cartItem);
     } catch (error) {
       console.error("Payment error:", error);
     } finally {
@@ -45,8 +59,8 @@ const GenericProgram = ({ subscription, useOriginalComponent }) => {
         </div>
       )}
       
-      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-14 lg:items-start">
-        <Animate className="px-2 w-full lg:w-2/3 lg:px-7">
+      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-5 lg:-mt-14 lg:items-start flex-col-reverse lg:flex-row">
+        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14 lg:mt-0">
           <h3 className="text-[32px] ff-2 mb-5 lg:mb-8 leading-[1.2]">
             {subscription.name} {subscription.fee ? `(₹${subscription.fee})` : ''} {subscription.duration ? `(${subscription.duration})` : ''}
           </h3>
@@ -55,7 +69,7 @@ const GenericProgram = ({ subscription, useOriginalComponent }) => {
             dangerouslySetInnerHTML={{ __html: subscription.description }} 
           />
         </Animate>
-        <div className="px-2 w-full lg:w-1/3 lg:px-7 ">
+        <div className="px-2 w-full lg:w-1/3 lg:px-7 mb-14 lg:mb-0">
           <div className="flex flex-col rounded-md overflow-hidden shadow-xl">
             <figure className="relative overflow-hidden pb-[69.98%]">
               <Image
@@ -73,10 +87,10 @@ const GenericProgram = ({ subscription, useOriginalComponent }) => {
               </p>
               <Button
                 className={"w-full"}
-                onClick={() => handleBuyNow(subscription.fee)}
+                onClick={handleBuyNow}
                 disabled={isProcessingPayment || !subscription.fee}
               >
-                BUY NOW
+                ADD TO CART
               </Button>
             </div>
           </div>

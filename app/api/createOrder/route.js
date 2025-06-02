@@ -7,11 +7,24 @@ const razorpay = new Razorpay({
 });
 
 export async function POST(req) {
-  const { amount } = await req.json();
-  const order = await razorpay.orders.create({
-    amount,
-    currency: "INR",
-  });
+  try {
+    const { amount, cartId } = await req.json();
+    
+    // Create Razorpay order
+    const order = await razorpay.orders.create({
+      amount,
+      currency: "INR",
+      notes: {
+        cartId: cartId || 'direct_purchase'
+      }
+    });
 
-  return NextResponse.json(order);
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error("Error creating Razorpay order:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to create payment order" },
+      { status: 500 }
+    );
+  }
 }

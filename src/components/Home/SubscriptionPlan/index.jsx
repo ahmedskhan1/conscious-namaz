@@ -11,6 +11,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
+import { useCart } from "@/src/context/CartContext";
 
 const SubscriptionPlan = () => {
   const router = useRouter();
@@ -19,6 +20,7 @@ const SubscriptionPlan = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     setIsClient(true);
@@ -46,14 +48,24 @@ const SubscriptionPlan = () => {
     router.push(`/programs?tab=${index}#about-programs`);
   };
 
-  const handleBuyNow = async (feeAmount) => {
+  const handleBuyNow = async (plan) => {
     if (isProcessingPayment) return; // Prevent double clicks
     
     try {
       setIsProcessingPayment(true);
-      // Add a small delay to ensure the state is updated before proceeding
-      await new Promise(resolve => setTimeout(resolve, 10));
-      await createOrder(feeAmount);
+      
+      // Create cart item from subscription plan
+      const cartItem = {
+        id: plan._id || `subscription-${Date.now()}`,
+        name: plan.name || "Subscription Plan",
+        description: plan.description ? stripHtmlTags(plan.description, 100) : "",
+        price: plan.fee,
+        image: plan.image || `/images/home-sub-img-${Math.floor(Math.random() * 4) + 1}.webp`,
+        quantity: 1
+      };
+      
+      // Add to cart using the payment utility
+      await createOrder(plan.fee, cartItem);
     } catch (error) {
       console.error("Payment error:", error);
     } finally {
@@ -164,7 +176,7 @@ const SubscriptionPlan = () => {
                             </Button>
                             <Button
                               className={"flex-1"}
-                              onClick={() => handleBuyNow(plan.fee)}
+                              onClick={() => handleBuyNow(plan)}
                               disabled={isProcessingPayment}
                             >
                               BUY NOW

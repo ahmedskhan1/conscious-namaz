@@ -6,11 +6,48 @@ import ProgramContainer from "../ProgramContainer";
 import Animate from "../../Animate";
 import createOrder from "@/src/utils/payment";
 import fee from "@/src/utils/fee_static";
+import { useState } from "react";
+import { useCart } from "@/src/context/CartContext";
+
 const ProgramOne = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = async () => {
+    if (isProcessing) return;
+    
+    try {
+      setIsProcessing(true);
+      
+      // Create cart item
+      const cartItem = {
+        id: "tahajjud-namaz-program",
+        name: "Three-day Tahajjud Namaz Program",
+        description: "A three-day program conducted in two sessions each day, focused on conscious praying and manifesting through Tahajjud Namaz.",
+        price: fee.tahajjud_namaz_program,
+        image: "/images/home-sub-img-1.jpg",
+        quantity: 1
+      };
+      
+      // Use createOrder to add to cart
+      await createOrder(fee.tahajjud_namaz_program, cartItem);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <>
-      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-14 lg:items-center">
-        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14">
+      {isProcessing && (
+        <div className="fixed inset-0 bg-primary bg-opacity-60 z-[100] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      )}
+      
+      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-5 lg:-mt-14 lg:items-center flex-col-reverse lg:flex-row">
+        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14 lg:mt-0">
           <h3 className="text-[32px] ff-2 mb-5 lg:mb-8 leading-[1.2]">
             Three-day Tahajjud Namaz Program (2999Rs) (6 sessions)
           </h3>
@@ -22,7 +59,7 @@ const ProgramOne = () => {
             benefits of this sacred time and conscious prayer.
           </p>
         </Animate>
-        <div className="px-2 w-full lg:w-1/3 lg:px-7 mt-14">
+        <div className="px-2 w-full lg:w-1/3 lg:px-7 mb-14 lg:mb-0">
           <div className="flex flex-col rounded-md overflow-hidden shadow-xl">
             <figure className="relative overflow-hidden pb-[69.98%]">
               <Image
@@ -35,13 +72,14 @@ const ProgramOne = () => {
             <div className="bg-white p-5">
               <p className="text-lg lg:text-xl mb-5">
                 Tahajjud Namaz
-                <br /> <strong>Three-day</strong> Program  (2999Rs)(6 sessions)
+                <br /> <strong>Three-day</strong> Program  (2999Rs)(6 sessions)
               </p>
               <Button
                 className={"w-full"}
-                onClick={() => createOrder(fee.tahajjud_namaz_program)}
+                onClick={handleAddToCart}
+                disabled={isProcessing}
               >
-                BUY NOW
+                ADD TO CART
               </Button>
             </div>
           </div>
@@ -66,7 +104,7 @@ const ProgramOne = () => {
         <h3>Why is it important?</h3>
         <p>
           As mentioned in one of the most sacred Hadees (Sacred texts written by
-          Prophet’s companions), Sahi-al-Bukhari (1145) narrated by Abu Huraira,
+          Prophet's companions), Sahi-al-Bukhari (1145) narrated by Abu Huraira,
         </p>
         <p>
           Allah's messenger said "Our Lord, the blessed, the Superior, comes

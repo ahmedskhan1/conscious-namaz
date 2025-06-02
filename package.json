@@ -9,13 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "chart.js": "^4.4.9",
     "cloudinary": "^2.6.1",
     "crypto": "^1.0.1",
     "framer-motion": "^11.9.0",
     "mongoose": "^8.13.2",
     "next": "14.2.9",
+    "nodemailer": "^7.0.3",
     "razorpay": "^2.9.5",
     "react": "^18",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^18",
     "react-quill": "^2.0.0",
     "swiper": "^8.4.7",

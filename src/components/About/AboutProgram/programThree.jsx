@@ -9,8 +9,8 @@ import fee from "@/src/utils/fee_static";
 const ProgramThree = () => {
   return (
     <>
-      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-14 lg:items-center">
-        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14">
+      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-5 lg:-mt-14 lg:items-center flex-col-reverse lg:flex-row">
+        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14 lg:mt-0">
           <h3 className="text-[32px] ff-2 mb-5 lg:mb-8 leading-[1.2]">
             Group Meditations (8999Rs) (3 sessions of one hour each- Only ten
             people per session)
@@ -22,12 +22,12 @@ const ProgramThree = () => {
             a super amplified impact of the Dua. The power of pouring the same
             intent at the same time in groups is beyond imaginable. If you are
             seeking some desire to manifest that is very important to you like
-            sending healing prayers for a loved one’s recovery or have a very
+            sending healing prayers for a loved one's recovery or have a very
             important job or business deal to fall into place or desiring to
             marry the perfect partner, this program is for you.{" "}
           </p>
         </Animate>
-        <div className="px-2 w-full lg:w-1/3 lg:px-7 mt-14">
+        <div className="px-2 w-full lg:w-1/3 lg:px-7 mb-14 lg:mb-0">
           <div className="flex flex-col rounded-md overflow-hidden shadow-xl">
             <figure className="relative overflow-hidden pb-[69.98%]">
               <Image

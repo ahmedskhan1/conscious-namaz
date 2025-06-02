@@ -6,6 +6,8 @@ import Link from 'next/link';
 import RichTextEditor from '@/src/components/RichTextEditor';
 import { htmlToPlainText, plainTextToHtml, containsHtml } from '@/src/utils/textFormatting';
 import { uploadToCloudinary } from '@/src/utils/cloudinary';
+import OrdersTab from './orders';
+import CouponsTab from './coupons';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -87,6 +89,27 @@ export default function Dashboard() {
   const [reviewImageFile, setReviewImageFile] = useState(null);
   const [reviewImagePreview, setReviewImagePreview] = useState('');
   
+  // Add this after other state declarations around line 30
+  const [coupons, setCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discount: 10,
+    description: '',
+    validFrom: new Date().toISOString().split('T')[0],
+    validUntil: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() + 30);
+      return date.toISOString().split('T')[0];
+    })(),
+    isActive: true
+  });
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  
+  // Add this after other state declarations
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  
   useEffect(() => {
     // Check if user data exists in localStorage
     const userData = localStorage.getItem('user');
@@ -110,6 +133,8 @@ export default function Dashboard() {
     fetchReviews();
     fetchBlogs();
     fetchBannerSettings();
+    fetchCoupons();
+    fetchOrders();
   }, [router]);
   
   // Function to check Cloudinary configuration
@@ -270,6 +295,46 @@ export default function Dashboard() {
       console.error('Error fetching banner settings:', error);
     } finally {
       setLoadingBannerSettings(false);
+    }
+  };
+  
+  // Fetch coupons from API
+  const fetchCoupons = async () => {
+    try {
+      setLoadingCoupons(true);
+      const response = await fetch('/api/coupons');
+      const data = await response.json();
+      
+      if (data.success) {
+        setCoupons(data.coupons);
+      } else {
+        console.error("API returned success:false:", data);
+      }
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+      alert('Error loading coupons: ' + error.message);
+    } finally {
+      setLoadingCoupons(false);
+    }
+  };
+  
+  // Fetch orders from API
+  const fetchOrders = async () => {
+    try {
+      setLoadingOrders(true);
+      const response = await fetch('/api/cart');
+      const data = await response.json();
+      
+      if (data.success) {
+        setOrders(data.carts);
+      } else {
+        console.error("API returned success:false:", data);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      alert('Error loading orders: ' + error.message);
+    } finally {
+      setLoadingOrders(false);
     }
   };
   
@@ -1006,6 +1071,132 @@ export default function Dashboard() {
     }
   };
 
+  // Handle coupon form change
+  const handleCouponFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCouponForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Open coupon modal for adding
+  const handleAddCoupon = () => {
+    setCouponForm({
+      code: '',
+      discount: 10,
+      description: '',
+      validFrom: new Date().toISOString().split('T')[0],
+      validUntil: (() => {
+        const date = new Date();
+        date.setDate(date.getDate() + 30);
+        return date.toISOString().split('T')[0];
+      })(),
+      isActive: true
+    });
+    setEditMode(false);
+    setCurrentItemId(null);
+    setShowCouponModal(true);
+  };
+
+  // Open coupon modal for editing
+  const handleEditCoupon = (coupon) => {
+    setCouponForm({
+      code: coupon.code,
+      discount: coupon.discount,
+      description: coupon.description || '',
+      validFrom: new Date(coupon.validFrom).toISOString().split('T')[0],
+      validUntil: new Date(coupon.validUntil).toISOString().split('T')[0],
+      isActive: coupon.isActive
+    });
+    setEditMode(true);
+    setCurrentItemId(coupon._id);
+    setShowCouponModal(true);
+  };
+
+  // Submit coupon form
+  const handleSubmitCoupon = async (e) => {
+    e.preventDefault();
+    
+    try {
+      if (!couponForm.code || !couponForm.discount) {
+        alert('Coupon code and discount percentage are required');
+        return;
+      }
+      
+      const requestBody = {
+        code: couponForm.code.toUpperCase(),
+        discount: parseInt(couponForm.discount),
+        description: couponForm.description || `${couponForm.discount}% off`,
+        validFrom: new Date(couponForm.validFrom).toISOString(),
+        validUntil: new Date(couponForm.validUntil).toISOString(),
+        isActive: couponForm.isActive
+      };
+      
+      if (editMode) {
+        // Update existing coupon
+        const response = await fetch(`/api/coupons/${currentItemId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update coupon');
+        }
+      } else {
+        // Create new coupon
+        const response = await fetch('/api/coupons', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create coupon');
+        }
+      }
+      
+      setShowCouponModal(false);
+      fetchCoupons();
+    } catch (error) {
+      console.error('Error saving coupon:', error);
+      alert('An error occurred while saving the coupon: ' + error.message);
+    }
+  };
+
+  // Delete coupon
+  const handleDeleteCoupon = async (id) => {
+    if (window.confirm('Are you sure you want to delete this coupon?')) {
+      try {
+        const response = await fetch('/api/coupons', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          fetchCoupons();
+        } else {
+          alert(data.error || 'Failed to delete coupon');
+        }
+      } catch (error) {
+        console.error('Error deleting coupon:', error);
+        alert('An error occurred while deleting the coupon');
+      }
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -1062,6 +1253,18 @@ export default function Dashboard() {
             onClick={() => setActiveTab('bannerSettings')}
           >
             Offer Banner
+          </button>
+          <button 
+            className={`px-4 py-2 font-medium ${activeTab === 'coupons' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
+            onClick={() => setActiveTab('coupons')}
+          >
+            Coupons
+          </button>
+          <button 
+            className={`px-4 py-2 font-medium ${activeTab === 'orders' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            Orders
           </button>
         </div>
         
@@ -1127,6 +1330,402 @@ export default function Dashboard() {
                 )}
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Restore the subscription modal */}
+        {showSubscriptionModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Subscription' : 'Add New Subscription'}</h2>
+              <form onSubmit={handleSubmitSubscription}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    value={subscriptionForm.name} 
+                    onChange={handleSubscriptionFormChange}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" 
+                    required 
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <RichTextEditor 
+                    value={subscriptionForm.description} 
+                    onChange={(content) => setSubscriptionForm(prev => ({ ...prev, description: content }))}
+                    placeholder="Write subscription description here..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (containsHtml(subscriptionForm.description)) {
+                        const plainText = htmlToPlainText(subscriptionForm.description);
+                        setSubscriptionForm(prev => ({ ...prev, description: plainText }));
+                      }
+                    }}
+                    className="mt-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 px-2 rounded"
+                  >
+                    Convert to Plain Text
+                  </button>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                  <input 
+                    type="file" 
+                    onChange={handleSubImageChange}
+                    className="w-full" 
+                    accept="image/*" 
+                  />
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
+                  {subImagePreview && (
+                    <div className="mt-2 relative h-40 w-full">
+                      <img 
+                        src={subImagePreview} 
+                        alt="Subscription preview" 
+                        className="h-40 object-cover rounded-md" 
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fee (₹)</label>
+                  <input 
+                    type="number" 
+                    name="fee" 
+                    value={subscriptionForm.fee} 
+                    onChange={handleSubscriptionFormChange}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" 
+                    required 
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                  <input 
+                    type="text" 
+                    name="duration" 
+                    value={subscriptionForm.duration} 
+                    onChange={handleSubscriptionFormChange}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" 
+                    placeholder="e.g. 3 days (6 sessions)"
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button 
+                    type="submit" 
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark"
+                  >
+                    {editMode ? 'Update Subscription' : 'Create Subscription'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowSubscriptionModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        
+        {/* Restore the video modal */}
+        {showVideoModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Video' : 'Add New Video'}</h2>
+              <form onSubmit={handleSubmitVideo}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input 
+                    type="text" 
+                    name="title" 
+                    value={videoForm.title} 
+                    onChange={handleVideoFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea 
+                    name="description" 
+                    value={videoForm.description} 
+                    onChange={handleVideoFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image <span className="text-red-500">*</span></label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full p-2 border rounded" 
+                    required={!editMode || !videoForm.img}
+                  />
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
+                  {!imageFile && !imagePreview && !editMode && (
+                    <p className="text-sm text-red-500 mt-1">An image is required for the video thumbnail</p>
+                  )}
+                  {imagePreview && (
+                    <div className="mt-2 relative w-full h-40">
+                      <img 
+                        src={imagePreview} 
+                        alt="Video preview" 
+                        className="w-full h-full object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                  <input 
+                    type="text" 
+                    name="url" 
+                    value={videoForm.url} 
+                    onChange={handleVideoFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <button 
+                    type="submit"
+                    className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md"
+                  >
+                    {editMode ? 'Update Video' : 'Create Video'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowVideoModal(false)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        
+        {/* Restore the review modal */}
+        {showReviewModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Review' : 'Add New Review'}</h2>
+              <form onSubmit={handleSubmitReview}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name of Reviewer</label>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    value={reviewForm.name} 
+                    onChange={handleReviewFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                  <select 
+                    name="rating" 
+                    value={reviewForm.rating} 
+                    onChange={handleReviewFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  >
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Review Content</label>
+                  <textarea 
+                    name="review" 
+                    value={reviewForm.review} 
+                    onChange={handleReviewFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reviewer Image</label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleReviewImageChange}
+                    className="w-full p-2 border rounded" 
+                  />
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
+                  {reviewImagePreview && (
+                    <div className="mt-2">
+                      <img src={reviewImagePreview} alt="Preview" className="w-32 h-32 object-cover rounded" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex space-x-2">
+                  <button 
+                    type="submit"
+                    className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md"
+                  >
+                    {editMode ? 'Update Review' : 'Create Review'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowReviewModal(false)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        
+        {/* Restore the blog modal */}
+        {showBlogModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Blog' : 'Add New Blog'}</h2>
+              <form onSubmit={handleSubmitBlog}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input 
+                    type="text" 
+                    name="title" 
+                    value={blogForm.title} 
+                    onChange={handleBlogFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL path)</label>
+                  <input 
+                    type="text" 
+                    name="slug" 
+                    value={blogForm.slug} 
+                    onChange={handleBlogFormChange}
+                    placeholder="my-blog-post (will be auto-generated if left empty)"
+                    className="w-full p-2 border rounded" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to auto-generate from title</p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea 
+                    name="description" 
+                    value={blogForm.description} 
+                    onChange={handleBlogFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                  <RichTextEditor 
+                    value={blogForm.content} 
+                    onChange={(content) => setBlogForm(prev => ({ ...prev, content }))}
+                    placeholder="Write your blog content here..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (containsHtml(blogForm.content)) {
+                        const plainText = htmlToPlainText(blogForm.content);
+                        setBlogForm(prev => ({ ...prev, content: plainText }));
+                      }
+                    }}
+                    className="mt-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 px-2 rounded"
+                  >
+                    Convert to Plain Text
+                  </button>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Blog Image {!editMode && <span className="text-red-500">*</span>}
+                  </label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleBlogImageChange}
+                    className="w-full p-2 border rounded" 
+                    required={!editMode}
+                  />
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
+                  {!editMode && !blogImageFile && (
+                    <p className="text-sm text-red-500 mt-1">Image is required for new blogs</p>
+                  )}
+                  {blogImagePreview && (
+                    <div className="mt-2 relative w-full h-40">
+                      <img 
+                        src={blogImagePreview} 
+                        alt="Blog preview" 
+                        className="w-full h-full object-cover rounded" 
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Read Time (e.g. "5 min")</label>
+                  <input 
+                    type="text" 
+                    name="readTime" 
+                    value={blogForm.readTime} 
+                    onChange={handleBlogFormChange}
+                    className="w-full p-2 border rounded" 
+                    required
+                  />
+                </div>
+                <div className="flex mb-4 space-x-6">
+                  <div className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      id="published"
+                      name="published" 
+                      checked={blogForm.published} 
+                      onChange={handleBlogFormChange}
+                      className="mr-2" 
+                    />
+                    <label htmlFor="published" className="text-sm font-medium text-gray-700">Published</label>
+                  </div>
+                  <div className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      id="featured"
+                      name="featured" 
+                      checked={blogForm.featured} 
+                      onChange={handleBlogFormChange}
+                      className="mr-2" 
+                    />
+                    <label htmlFor="featured" className="text-sm font-medium text-gray-700">Featured</label>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button 
+                    type="submit"
+                    className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md"
+                  >
+                    {editMode ? 'Update Blog' : 'Create Blog'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowBlogModal(false)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
         
@@ -1457,401 +2056,13 @@ export default function Dashboard() {
             )}
           </div>
         )}
+        
+        {/* Coupons Section */}
+        {activeTab === 'coupons' && <CouponsTab />}
+        
+        {/* Orders Section */}
+        {activeTab === 'orders' && <OrdersTab />}
       </div>
-      
-      {/* Add Blog Modal after other modals */}
-      {showBlogModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Blog' : 'Add New Blog'}</h2>
-            <form onSubmit={handleSubmitBlog}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input 
-                  type="text" 
-                  name="title" 
-                  value={blogForm.title} 
-                  onChange={handleBlogFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL path)</label>
-                <input 
-                  type="text" 
-                  name="slug" 
-                  value={blogForm.slug} 
-                  onChange={handleBlogFormChange}
-                  placeholder="my-blog-post (will be auto-generated if left empty)"
-                  className="w-full p-2 border rounded" 
-                />
-                <p className="text-xs text-gray-500 mt-1">Leave empty to auto-generate from title</p>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea 
-                  name="description" 
-                  value={blogForm.description} 
-                  onChange={handleBlogFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                <RichTextEditor 
-                  value={blogForm.content} 
-                  onChange={(content) => setBlogForm(prev => ({ ...prev, content }))}
-                  placeholder="Write your blog content here..."
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (containsHtml(blogForm.content)) {
-                      const plainText = htmlToPlainText(blogForm.content);
-                      setBlogForm(prev => ({ ...prev, content: plainText }));
-                    }
-                  }}
-                  className="mt-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 px-2 rounded"
-                >
-                  Convert to Plain Text
-                </button>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Blog Image {!editMode && <span className="text-red-500">*</span>}
-                </label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleBlogImageChange}
-                  className="w-full p-2 border rounded" 
-                  required={!editMode}
-                />
-                <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
-                {!editMode && !blogImageFile && (
-                  <p className="text-sm text-red-500 mt-1">Image is required for new blogs</p>
-                )}
-                {blogImagePreview && (
-                  <div className="mt-2 relative w-full h-40">
-                    <img 
-                      src={blogImagePreview} 
-                      alt="Blog preview" 
-                      className="w-full h-full object-cover rounded" 
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Read Time (e.g. "5 min")</label>
-                <input 
-                  type="text" 
-                  name="readTime" 
-                  value={blogForm.readTime} 
-                  onChange={handleBlogFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="flex mb-4 space-x-6">
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    id="published"
-                    name="published" 
-                    checked={blogForm.published} 
-                    onChange={handleBlogFormChange}
-                    className="mr-2" 
-                  />
-                  <label htmlFor="published" className="text-sm font-medium text-gray-700">Published</label>
-                </div>
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    id="featured"
-                    name="featured" 
-                    checked={blogForm.featured} 
-                    onChange={handleBlogFormChange}
-                    className="mr-2" 
-                  />
-                  <label htmlFor="featured" className="text-sm font-medium text-gray-700">Featured</label>
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <button 
-                  type="submit"
-                  className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md"
-                >
-                  {editMode ? 'Update Blog' : 'Create Blog'}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setShowBlogModal(false)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {/* Existing modals */}
-      {showSubscriptionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Subscription' : 'Add New Subscription'}</h2>
-            <form onSubmit={handleSubmitSubscription}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={subscriptionForm.name} 
-                  onChange={handleSubscriptionFormChange}
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" 
-                  required 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <RichTextEditor 
-                  value={subscriptionForm.description} 
-                  onChange={(content) => setSubscriptionForm(prev => ({ ...prev, description: content }))}
-                  placeholder="Write subscription description here..."
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (containsHtml(subscriptionForm.description)) {
-                      const plainText = htmlToPlainText(subscriptionForm.description);
-                      setSubscriptionForm(prev => ({ ...prev, description: plainText }));
-                    }
-                  }}
-                  className="mt-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 px-2 rounded"
-                >
-                  Convert to Plain Text
-                </button>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-                <input 
-                  type="file" 
-                  onChange={handleSubImageChange}
-                  className="w-full" 
-                  accept="image/*" 
-                />
-                <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
-                {subImagePreview && (
-                  <div className="mt-2 relative h-40 w-full">
-                    <img 
-                      src={subImagePreview} 
-                      alt="Subscription preview" 
-                      className="h-40 object-cover rounded-md" 
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fee (₹)</label>
-                <input 
-                  type="number" 
-                  name="fee" 
-                  value={subscriptionForm.fee} 
-                  onChange={handleSubscriptionFormChange}
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" 
-                  required 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                <input 
-                  type="text" 
-                  name="duration" 
-                  value={subscriptionForm.duration} 
-                  onChange={handleSubscriptionFormChange}
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" 
-                  placeholder="e.g. 3 days (6 sessions)"
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark"
-                >
-                  {editMode ? 'Update Subscription' : 'Create Subscription'}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setShowSubscriptionModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {showVideoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Video' : 'Add New Video'}</h2>
-            <form onSubmit={handleSubmitVideo}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input 
-                  type="text" 
-                  name="title" 
-                  value={videoForm.title} 
-                  onChange={handleVideoFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea 
-                  name="description" 
-                  value={videoForm.description} 
-                  onChange={handleVideoFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image <span className="text-red-500">*</span></label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full p-2 border rounded" 
-                  required={!editMode || !videoForm.img}
-                />
-                <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
-                {!imageFile && !imagePreview && !editMode && (
-                  <p className="text-sm text-red-500 mt-1">An image is required for the video thumbnail</p>
-                )}
-                {imagePreview && (
-                  <div className="mt-2 relative w-full h-40">
-                    <img 
-                      src={imagePreview} 
-                      alt="Video preview" 
-                      className="w-full h-full object-cover rounded"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                <input 
-                  type="text" 
-                  name="url" 
-                  value={videoForm.url} 
-                  onChange={handleVideoFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="flex space-x-2">
-                <button 
-                  type="submit"
-                  className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md"
-                >
-                  {editMode ? 'Update Video' : 'Create Video'}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setShowVideoModal(false)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {showReviewModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">{editMode ? 'Edit Review' : 'Add New Review'}</h2>
-            <form onSubmit={handleSubmitReview}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name of Reviewer</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={reviewForm.name} 
-                  onChange={handleReviewFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
-                <select 
-                  name="rating" 
-                  value={reviewForm.rating} 
-                  onChange={handleReviewFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                >
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Review Content</label>
-                <textarea 
-                  name="review" 
-                  value={reviewForm.review} 
-                  onChange={handleReviewFormChange}
-                  className="w-full p-2 border rounded" 
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reviewer Image</label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleReviewImageChange}
-                  className="w-full p-2 border rounded" 
-                />
-                <p className="text-xs text-amber-600 mt-1">⚠️ Image must be less than 4MB </p>
-                {reviewImagePreview && (
-                  <div className="mt-2">
-                    <img src={reviewImagePreview} alt="Preview" className="w-32 h-32 object-cover rounded" />
-                  </div>
-                )}
-              </div>
-              <div className="flex space-x-2">
-                <button 
-                  type="submit"
-                  className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md"
-                >
-                  {editMode ? 'Update Review' : 'Create Review'}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setShowReviewModal(false)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

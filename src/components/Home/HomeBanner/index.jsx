@@ -6,6 +6,7 @@ import Container from "../../Container";
 import Animate from "../../Animate";
 import Link from "next/link";
 import createOrder from "@/src/utils/payment";
+import { useCart } from "@/src/context/CartContext";
 
 const HomeBanner = () => {
   // Retrieve the banner state from localStorage, default to true if not present
@@ -15,6 +16,7 @@ const HomeBanner = () => {
     price: 1999,
     originalPrice: 2999
   });
+  const { addToCart } = useCart();
 
   // Fetch banner settings from the API
   useEffect(() => {
@@ -48,6 +50,23 @@ const HomeBanner = () => {
   // Function to handle closing the banner and storing the state in localStorage
   const handleCloseBanner = () => {
     setIsBannerVisible(false);
+  };
+
+  // Handle register now button click
+  const handleRegisterNow = () => {
+    // Create cart item from banner settings
+    const cartItem = {
+      id: "tahajjud-namaz-program",
+      name: "Tahajjud Namaz Program",
+      description: bannerSettings.description,
+      price: bannerSettings.price,
+      originalPrice: bannerSettings.originalPrice,
+      image: "/images/home-banner.webp",
+      quantity: 1
+    };
+    
+    // Add to cart using the payment utility
+    createOrder(bannerSettings.price, cartItem);
   };
 
   return (
@@ -91,7 +110,7 @@ const HomeBanner = () => {
                 <Button
                   className={"xl:min-w-[340px]"}
                   varient="light"
-                  onClick={() => createOrder(bannerSettings.price)}
+                  onClick={handleRegisterNow}
                 >
                   register now
                 </Button>

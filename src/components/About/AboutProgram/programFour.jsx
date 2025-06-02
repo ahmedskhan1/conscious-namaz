@@ -9,8 +9,8 @@ import fee from "@/src/utils/fee_static";
 const ProgramFour = () => {
   return (
     <>
-      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-14 lg:items-center">
-        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14">
+      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-5 lg:-mt-14 lg:items-center flex-col-reverse lg:flex-row">
+        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14 lg:mt-0">
           <h3 className="text-[32px] ff-2 mb-5 lg:mb-8 leading-[1.2]">
             Zikr Meditations for powerful Healing (4999Rs) (11 sessions of one
             hour)
@@ -22,7 +22,7 @@ const ProgramFour = () => {
             Zikr is the ultimate answer to all.{" "}
           </p>
         </Animate>
-        <div className="px-2 w-full lg:w-1/3 lg:px-7 mt-14">
+        <div className="px-2 w-full lg:w-1/3 lg:px-7 mb-14 lg:mb-0">
           <div className="flex flex-col rounded-md overflow-hidden shadow-xl">
             <figure className="relative overflow-hidden pb-[69.98%]">
               <Image

@@ -73,7 +73,7 @@ const ProgramContent = () => {
         </Animate>
       </div>
 
-      <div className="max-w-[1180px] mx-auto mt-10 lg:mt-20 xl:mt-24">
+      <div className="max-w-[1180px] mx-auto mt-16 lg:mt-20 xl:mt-24">
         <Suspense fallback={<div>Loading...</div>}>
           {useOriginalComponents ? (
             // Use the original program components

@@ -101,7 +101,7 @@ async function updateBannerSettings(request) {
       }, { status: 400 });
     }
     
-    console.log("Received data for banner update:", data);
+    // console.log("Received data for banner update:", data);
     
     // Find the active banner settings
     let bannerSettings = await BannerSettings.findOne({ isActive: true });

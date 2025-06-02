@@ -6,18 +6,55 @@ import ProgramContainer from "../ProgramContainer";
 import Animate from "../../Animate";
 import createOrder from "@/src/utils/payment";
 import fee from "@/src/utils/fee_static";
+import { useState } from "react";
+import { useCart } from "@/src/context/CartContext";
+
 const ProgramTwo = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = async () => {
+    if (isProcessing) return;
+    
+    try {
+      setIsProcessing(true);
+      
+      // Create cart item
+      const cartItem = {
+        id: "personalised-islamic-meditation",
+        name: "Personalised and Guided Islamic Meditation",
+        description: "Three one-on-one sessions focused on creating personalized Islamic meditation combining Zikr and Muraqabah for powerful manifestation.",
+        price: fee.personalised_islamic_meditation,
+        image: "/images/home-sub-img-2.jpg",
+        quantity: 1
+      };
+      
+      // Use createOrder to add to cart
+      await createOrder(fee.personalised_islamic_meditation, cartItem);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <>
-      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-14 lg:items-center">
-        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14">
+      {isProcessing && (
+        <div className="fixed inset-0 bg-primary bg-opacity-60 z-[100] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      )}
+      
+      <div className="-mx-2 lg:-mx-7 flex flex-wrap -mt-5 lg:-mt-14 lg:items-center flex-col-reverse lg:flex-row">
+        <Animate className="px-2 w-full lg:w-2/3 lg:px-7 mt-14 lg:mt-0">
           <h3 className="text-[32px] ff-2 mb-5 lg:mb-8 leading-[1.2]">
             Personalised and Guided Islamic Meditation (5999Rs) (3 sessions of
             one hour each)
           </h3>
           {/* <p className='lg:text-lg leading-[1.5]'>We are all aware of the miracles TAHAJJUD prayer can offer, but sadly we have underestimated its power to an extent we almost neglected this moon-light prayer. The soul purpose of Conscious Namaz is to call every Muslim and also non-Muslim to reap maximum benefits of this sacred time and conscious prayer.</p> */}
         </Animate>
-        <div className="px-2 w-full lg:w-1/3 lg:px-7 mt-14">
+        <div className="px-2 w-full lg:w-1/3 lg:px-7 mb-14 lg:mb-0">
           <div className="flex flex-col rounded-md overflow-hidden shadow-xl">
             <figure className="relative overflow-hidden pb-[69.98%]">
               <Image
@@ -34,9 +71,10 @@ const ProgramTwo = () => {
               </p>
               <Button
                 className={"w-full"}
-                onClick={() => createOrder(fee.personalised_islamic_meditation)}
+                onClick={handleAddToCart}
+                disabled={isProcessing}
               >
-                BUY NOW
+                ADD TO CART
               </Button>
             </div>
           </div>
